@@ -6,7 +6,7 @@ Run tests of the project inside a container.
 import argparse
 import shutil
 from dataclasses import dataclass
-from os import getcwd
+from os import getcwd, system
 from pathlib import Path
 from textwrap import dedent
 from typing import Callable, Generator, List, Optional, Set, Union, cast
@@ -562,7 +562,12 @@ class TestCommand(DockerCommand):
         if coverage.exists():
             for file in coverage.glob("*"):
                 # Full path should be passed to overwrite if already exists.
-                shutil.move(str(file), str(coverage_dest / file.name))
+                try:
+                    shutil.move(str(file), str(coverage_dest / file.name))
+                except PermissionError:
+                    print(f"PermissionError: {file}")
+                    system(f"sudo mv {str(file)} {str(coverage_dest / file.name)}")
+                    continue
             else:
                 # Do not rmdir (TeardownTestCommandScript will do)
                 # related to https://github.com/Suresoft-GLaDOS/defects4cpp/issues/66
